@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -68,6 +69,10 @@ public class BizServiceImpl implements BizService {
     @Autowired
     @Qualifier("notifyExecutor")
     private Executor notifyExecutor;
+
+    @Autowired
+    @Qualifier("taskExecutor")
+    private Executor taskExecutor;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -175,6 +180,34 @@ public class BizServiceImpl implements BizService {
         }
     }
 
+    /**
+     * 更新支付交易
+     *
+     * @param transactionResult 交易结果
+     * @param payTransaction    支付交易
+     */
+    private void updatePay(TransactionResultDTO transactionResult, PayTransaction payTransaction) {
+        // 过期关闭支付
+        Integer status = transactionResult.getStatus();
+        if (PayStatusEnum.NOT_PAY.valueEquals(status) && LocalDateTime.now().isAfter(payTransaction.getExpireTime())) {
+            log.info("支付交易过期，关闭支付：{}", payTransaction.getTransactionId());
+            strategySelector.closePay(payTransaction, payTransaction.getEntrance());
+            transactionResult.setStatus(PayStatusEnum.PAY_CLOSED.getValue());
+        }
+
+        // 未支付不更新
+        status = transactionResult.getStatus();
+        if (PayStatusEnum.NOT_PAY.valueEquals(status)) {
+            return;
+        }
+
+        // 更新支付交易
+        payTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
+        payTransaction.setStatus(status);
+        payTransaction.setFinishTime(transactionResult.getFinishTime());
+        payTransactionMapper.updateById(payTransaction);
+    }
+
     @Override
     public String payNotify(HttpServletRequest request, String entrance) {
         // 解析支付通知
@@ -234,32 +267,31 @@ public class BizServiceImpl implements BizService {
         }
     }
 
-    /**
-     * 更新支付交易
-     *
-     * @param transactionResult 交易结果
-     * @param payTransaction    支付交易
-     */
-    private void updatePay(TransactionResultDTO transactionResult, PayTransaction payTransaction) {
-        // 过期关闭支付
-        Integer status = transactionResult.getStatus();
-        if (PayStatusEnum.NOT_PAY.valueEquals(status) && LocalDateTime.now().isAfter(payTransaction.getExpireTime())) {
-            log.info("支付交易过期，关闭支付：{}", payTransaction.getTransactionId());
-            strategySelector.closePay(payTransaction, payTransaction.getEntrance());
-            transactionResult.setStatus(PayStatusEnum.PAY_CLOSED.getValue());
-        }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void handleNotPay() {
+        // 查询未支付的交易
+        List<PayTransaction> payTransactions = payTransactionMapper.selectList(Wrappers.<PayTransaction>lambdaQuery()
+                .select(PayTransaction::getTransactionId)
+                .eq(PayTransaction::getStatus, PayStatusEnum.NOT_PAY.getValue()));
+        log.info("处理未支付数量：{}", payTransactions.size());
 
-        // 未支付不更新
-        status = transactionResult.getStatus();
-        if (PayStatusEnum.NOT_PAY.valueEquals(status)) {
-            return;
-        }
+        // 异步执行处理
+        payTransactions.forEach(payTransaction -> CompletableFuture.runAsync(() -> {
+                            QueryPayReq req = new QueryPayReq();
+                            req.setTransactionId(payTransaction.getTransactionId());
+                            QueryPayResp queryPayResp = queryPay(req);
 
-        // 更新支付交易
-        payTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
-        payTransaction.setStatus(status);
-        payTransaction.setFinishTime(transactionResult.getFinishTime());
-        payTransactionMapper.updateById(payTransaction);
+                            // 通知业务方支付结果
+                            String msg = JSON.toJSONString(BeanUtil.copyProperties(queryPayResp, TransactionResultDTO.class));
+                            Message<String> message = MessageBuilder.withPayload(msg).build();
+                            rocketMqTemplate.send(payTransaction.getBizMqTopic(), message);
+                        }, taskExecutor)
+                        .exceptionally(e -> {
+                            log.error("处理未支付失败", e);
+                            return null;
+                        })
+        );
     }
 
     @Override
@@ -343,6 +375,71 @@ public class BizServiceImpl implements BizService {
             refundTransactionMapper.updateById(refundTransaction);
         } catch (InterruptedException e) {
             throw new CustomizeException("处理退款通知获取锁失败", e);
+        } finally {
+            if (locked) {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public void handleInRefund() {
+        // 查询退款中的交易
+        List<RefundTransaction> refundTransactions = refundTransactionMapper
+                .selectList(Wrappers.<RefundTransaction>lambdaQuery()
+                        .select(RefundTransaction::getTransactionId)
+                        .eq(RefundTransaction::getStatus, RefundStatusEnum.IN_REFUND.getValue()));
+        log.info("处理退款中数量：{}", refundTransactions.size());
+
+        // 异步执行处理
+        refundTransactions.forEach(refundTransaction ->
+                CompletableFuture.runAsync(() -> handleInRefundTask(refundTransaction), taskExecutor)
+                        .exceptionally(e -> {
+                            log.error("处理退款中失败", e);
+                            return null;
+                        })
+        );
+    }
+
+    /**
+     * 处理退款中任务
+     *
+     * @param refundTransaction 退款交易
+     */
+    private void handleInRefundTask(RefundTransaction refundTransaction) {
+        String transactionId = refundTransaction.getTransactionId();
+        String key = StrUtil.format(RedisKeyConst.LOCK_REFUND_QUERY, transactionId);
+        RLock lock = redissonClient.getLock(key);
+        boolean locked = false;
+        try {
+            // 锁单循环，避免其它操作冲突
+            do {
+                locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
+                refundTransaction = refundTransactionMapper.selectOne(Wrappers.<RefundTransaction>lambdaQuery()
+                        .eq(RefundTransaction::getTransactionId, transactionId));
+                Assert.notNull(refundTransaction, "退款交易不存在");
+                if (!RefundStatusEnum.IN_REFUND.valueEquals(refundTransaction.getStatus())) {
+                    return;
+                }
+            } while (!locked);
+
+            // 查询支付交易
+            PayTransaction payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+                    .eq(PayTransaction::getTransactionId, refundTransaction.getPayTransactionId()));
+            Assert.notNull(payTransaction, "支付交易不存在");
+
+            // 查询退款
+            refundTransaction.setPayTransaction(payTransaction);
+            TransactionResultDTO transactionResult = strategySelector
+                    .queryRefund(refundTransaction, payTransaction.getEntrance());
+
+            // 更新退款交易
+            refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
+            refundTransaction.setStatus(transactionResult.getStatus());
+            refundTransaction.setFinishTime(transactionResult.getFinishTime());
+            refundTransactionMapper.updateById(refundTransaction);
+        } catch (InterruptedException e) {
+            throw new CustomizeException("处理退款任务获取锁失败", e);
         } finally {
             if (locked) {
                 lock.unlock();

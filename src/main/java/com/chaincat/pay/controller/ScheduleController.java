@@ -1,15 +1,15 @@
 package com.chaincat.pay.controller;
 
-import com.chaincat.components.pay.common.model.IResult;
-import com.chaincat.components.pay.common.utils.IResultUtils;
-import com.chaincat.components.pay.service.ScheduleService;
+import com.chaincat.pay.model.IResult;
+import com.chaincat.pay.service.BizService;
+import com.chaincat.pay.utils.IResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 通知接口
+ * 定时任务接口
  *
  * @author chenhaizhuang
  */
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScheduleController {
 
     @Autowired
-    private ScheduleService scheduleService;
+    private BizService bizService;
 
     /**
      * 处理未支付
@@ -27,7 +27,7 @@ public class ScheduleController {
      */
     @PostMapping("/handleNotPay")
     public IResult<Void> handleNotPay() {
-        scheduleService.handleNotPay();
+        bizService.handleNotPay();
         return IResultUtils.success();
     }
 
@@ -38,7 +38,7 @@ public class ScheduleController {
      */
     @PostMapping("/handleInRefund")
     public IResult<Void> handleInRefund() {
-        scheduleService.handleInRefund();
+        bizService.handleInRefund();
         return IResultUtils.success();
     }
 }

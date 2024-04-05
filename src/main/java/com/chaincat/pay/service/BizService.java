@@ -50,6 +50,11 @@ public interface BizService {
     String payNotify(HttpServletRequest request, String entrance);
 
     /**
+     * 处理未支付
+     */
+    void handleNotPay();
+
+    /**
      * 退款
      *
      * @param req 请求
@@ -65,4 +70,9 @@ public interface BizService {
      * @return String
      */
     String refundNotify(HttpServletRequest request, String entrance);
+
+    /**
+     * 处理退款中
+     */
+    void handleInRefund();
 }
