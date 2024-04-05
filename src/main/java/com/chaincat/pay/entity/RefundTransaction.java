@@ -79,4 +79,10 @@ public class RefundTransaction {
      * 业务数据ID
      */
     private String bizDataId;
+
+    /**
+     * 支付交易
+     */
+    @TableField(exist = false)
+    private PayTransaction payTransaction;
 }
