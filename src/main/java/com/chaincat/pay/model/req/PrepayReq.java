@@ -19,9 +19,9 @@ import java.time.LocalDateTime;
 public class PrepayReq {
 
     /**
-     * 支付入口
+     * 入口
      */
-    @NotBlank(message = "支付入口不能为空")
+    @NotBlank(message = "入口不能为空")
     private String entrance;
 
     /**

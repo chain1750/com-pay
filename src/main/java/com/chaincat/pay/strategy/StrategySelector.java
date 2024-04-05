@@ -17,7 +17,7 @@ public interface StrategySelector {
      * 预支付
      *
      * @param payTransaction 支付交易
-     * @param entrance       支付入口
+     * @param entrance       入口
      * @return String
      */
     String prepay(PayTransaction payTransaction, String entrance);
@@ -26,7 +26,7 @@ public interface StrategySelector {
      * 关闭支付
      *
      * @param payTransaction 支付交易
-     * @param entrance       支付入口
+     * @param entrance       入口
      */
     void closePay(PayTransaction payTransaction, String entrance);
 
@@ -34,7 +34,7 @@ public interface StrategySelector {
      * 查询支付
      *
      * @param payTransaction 支付交易
-     * @param entrance       支付入口
+     * @param entrance       入口
      * @return TransactionResultDTO
      */
     TransactionResultDTO queryPay(PayTransaction payTransaction, String entrance);
@@ -43,7 +43,7 @@ public interface StrategySelector {
      * 解析支付通知
      *
      * @param request  通知请求
-     * @param entrance 支付入口
+     * @param entrance 入口
      * @return TransactionResultDTO
      */
     TransactionResultDTO parsePayNotify(HttpServletRequest request, String entrance);
@@ -52,7 +52,7 @@ public interface StrategySelector {
      * 退款
      *
      * @param refundTransaction 退款交易
-     * @param entrance          支付入口
+     * @param entrance          入口
      */
     void refund(RefundTransaction refundTransaction, String entrance);
 
@@ -60,7 +60,7 @@ public interface StrategySelector {
      * 查询退款
      *
      * @param refundTransaction 退款交易
-     * @param entrance          支付入口
+     * @param entrance          入口
      * @return TransactionResultDTO
      */
     TransactionResultDTO queryRefund(RefundTransaction refundTransaction, String entrance);
@@ -69,7 +69,7 @@ public interface StrategySelector {
      * 解析退款通知
      *
      * @param request  通知请求
-     * @param entrance 支付入口
+     * @param entrance 入口
      * @return TransactionResultDTO
      */
     TransactionResultDTO parseRefundNotify(HttpServletRequest request, String entrance);

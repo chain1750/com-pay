@@ -34,14 +34,14 @@ public class StrategySelectorImpl implements StrategySelector {
     /**
      * 统一支付方式Service
      *
-     * @param entrance 支付入口
+     * @param entrance 入口
      * @return TransactionService
      */
     private GlobalPayMethodService select(String entrance) {
         Map<String, String> map = entranceProperties.getEntrances();
         String payMethod = entranceProperties.getEntrances().getOrDefault(entrance, "");
         if (StrUtil.isEmpty(payMethod) || !applicationContext.containsBean(payMethod)) {
-            throw new CustomizeException("支付入口没有可用的支付方式");
+            throw new CustomizeException("入口没有可用的支付方式");
         }
         return applicationContext.getBean(map.get(entrance), GlobalPayMethodService.class);
     }

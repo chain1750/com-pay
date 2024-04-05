@@ -8,6 +8,8 @@ import com.chaincat.pay.model.resp.PrepayResp;
 import com.chaincat.pay.model.resp.QueryPayResp;
 import com.chaincat.pay.model.resp.RefundResp;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * 业务Service
  *
@@ -39,10 +41,28 @@ public interface BizService {
     QueryPayResp queryPay(QueryPayReq req);
 
     /**
+     * 支付通知
+     *
+     * @param request  通知请求
+     * @param entrance 入口
+     * @return String
+     */
+    String payNotify(HttpServletRequest request, String entrance);
+
+    /**
      * 退款
      *
      * @param req 请求
      * @return RefundResp
      */
     RefundResp refund(RefundReq req);
+
+    /**
+     * 退款通知
+     *
+     * @param request  通知请求
+     * @param entrance 入口
+     * @return String
+     */
+    String refundNotify(HttpServletRequest request, String entrance);
 }
