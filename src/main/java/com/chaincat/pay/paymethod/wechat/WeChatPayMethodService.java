@@ -65,6 +65,12 @@ public abstract class WeChatPayMethodService implements GlobalPayMethodService {
         }
     }
 
+    /**
+     * 构建交易结果
+     *
+     * @param transaction 支付交易结果
+     * @return TransactionResultDTO
+     */
     protected TransactionResultDTO buildTransactionResult(Transaction transaction) {
         TransactionResultDTO transactionResult = new TransactionResultDTO();
         transactionResult.setTransactionId(transaction.getOutTradeNo());
@@ -82,7 +88,7 @@ public abstract class WeChatPayMethodService implements GlobalPayMethodService {
             transactionResult.setStatus(PayStatusEnum.PAY_CLOSED.getValue());
         }
 
-        transactionResult.setNotifyResult("{\"code\": \"FAIL\",\"message\": \"失败\"}");
+        transactionResult.setNotifyResult("");
         return transactionResult;
     }
 
@@ -154,6 +160,12 @@ public abstract class WeChatPayMethodService implements GlobalPayMethodService {
         }
     }
 
+    /**
+     * 构建交易结果
+     *
+     * @param refund 退款交易结果
+     * @return TransactionResultDTO
+     */
     private TransactionResultDTO buildTransactionResult(Refund refund) {
         TransactionResultDTO transactionResult = new TransactionResultDTO();
         transactionResult.setTransactionId(refund.getOutRefundNo());
@@ -171,7 +183,7 @@ public abstract class WeChatPayMethodService implements GlobalPayMethodService {
             transactionResult.setStatus(RefundStatusEnum.REFUND_FAIL.getValue());
         }
 
-        transactionResult.setNotifyResult("{\"code\": \"FAIL\",\"message\": \"失败\"}");
+        transactionResult.setNotifyResult("");
         return transactionResult;
     }
 }
