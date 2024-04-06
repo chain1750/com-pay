@@ -39,10 +39,11 @@ public interface GlobalPayMethodService {
     /**
      * 解析支付通知
      *
-     * @param request 通知请求
+     * @param request  通知请求
+     * @param entrance 入口
      * @return TransactionResultDTO
      */
-    TransactionResultDTO parsePayNotify(HttpServletRequest request);
+    TransactionResultDTO parsePayNotify(HttpServletRequest request, String entrance);
 
     /**
      * 退款
@@ -62,8 +63,9 @@ public interface GlobalPayMethodService {
     /**
      * 解析退款通知
      *
-     * @param request 通知请求
+     * @param request  通知请求
+     * @param entrance 入口
      * @return TransactionResultDTO
      */
-    TransactionResultDTO parseRefundNotify(HttpServletRequest request);
+    TransactionResultDTO parseRefundNotify(HttpServletRequest request, String entrance);
 }
