@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  * @author chenhaizhuang
  */
 @FeignClient(name = "base-user", path = "/base/user/user",
-        contextId = "com.chaincat.components.pay.feign.baseuser.ThirdpartyUserClient")
+        contextId = "com.chaincat.pay.feign.baseuser.ThirdpartyUserClient")
 public interface ThirdpartyUserClient {
 
     /**
