@@ -4,6 +4,7 @@ import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.extra.servlet.ServletUtil;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.domain.AlipayTradeCloseModel;
 import com.alipay.api.domain.AlipayTradeFastpayRefundQueryModel;
@@ -31,6 +32,8 @@ import com.chaincat.pay.paymethod.alipay.config.AlipayPayProperties;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,13 +96,13 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
     @Override
     public TransactionResultDTO parsePayNotify(HttpServletRequest request, String entrance) {
         Map<String, String> requestParam = new HashMap<>();
-        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+        Map<String, String> paramMap = ServletUtil.getParamMap(request);
+        for (Map.Entry<String, String> entry : paramMap.entrySet()) {
             String name = entry.getKey();
             if ("sign_type".equals(name)) {
                 continue;
             }
-            String[] values = entry.getValue();
-            requestParam.put(name, String.join(",", values));
+            requestParam.put(name, URLDecoder.decode(entry.getValue(), StandardCharsets.UTF_8));
         }
         AlipayPayProperties.Account account = AlipayPayFactory.getAccount(alipayPayProperties, entrance);
         boolean signVerified;
@@ -193,13 +196,13 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
     @Override
     public TransactionResultDTO parseRefundNotify(HttpServletRequest request, String entrance) {
         Map<String, String> requestParam = new HashMap<>();
-        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+        Map<String, String> paramMap = ServletUtil.getParamMap(request);
+        for (Map.Entry<String, String> entry : paramMap.entrySet()) {
             String name = entry.getKey();
             if ("sign_type".equals(name)) {
                 continue;
             }
-            String[] values = entry.getValue();
-            requestParam.put(name, String.join(",", values));
+            requestParam.put(name, URLDecoder.decode(entry.getValue(), StandardCharsets.UTF_8));
         }
         AlipayPayProperties.Account account = AlipayPayFactory.getAccount(alipayPayProperties, entrance);
         boolean signVerified;
