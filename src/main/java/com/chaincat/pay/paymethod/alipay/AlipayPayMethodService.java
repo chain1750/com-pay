@@ -51,11 +51,6 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
     protected NotifyUrlProperties notifyUrlProperties;
 
     @Override
-    public String prepay(PayTransaction payTransaction) {
-        return null;
-    }
-
-    @Override
     public void closePay(PayTransaction payTransaction) {
         AlipayClient alipayClient = AlipayPayFactory.getAlipayClient(alipayPayProperties, payTransaction.getEntrance());
 
