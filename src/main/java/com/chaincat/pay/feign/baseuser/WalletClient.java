@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
  * @author chenhaizhuang
  */
 @FeignClient(name = "base-user", path = "/base/user/wallet",
-        contextId = "com.chaincat.pay.feign.baseuser.ThirdpartyUserClient")
+        contextId = "com.chaincat.pay.feign.baseuser.WalletClient")
 public interface WalletClient {
 
     /**
