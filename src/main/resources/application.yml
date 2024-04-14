@@ -18,9 +18,9 @@ logging:
   charset:
     file: UTF-8
   file:
-    name: log/pay.log
+    name: log/service.log
   logback:
     rollingpolicy:
       max-file-size: 1MB
       max-history: 30
-      file-name-pattern: log/pay.%d{yyyy-MM-dd}.%i.log
+      file-name-pattern: log/service.%d{yyyy-MM-dd}.%i.log
