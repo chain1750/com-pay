@@ -9,6 +9,7 @@ import com.chaincat.pay.model.dto.TransactionResultDTO;
 import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@RefreshScope
 public class StrategySelector implements GlobalPayMethodService {
 
     @Autowired
@@ -38,7 +40,7 @@ public class StrategySelector implements GlobalPayMethodService {
      */
     private GlobalPayMethodService select(String entrance) {
         Map<String, String> map = entranceProperties.getEntrances();
-        String payMethod = entranceProperties.getEntrances().getOrDefault(entrance, "");
+        String payMethod = map.getOrDefault(entrance, "");
         if (StrUtil.isEmpty(payMethod) || !applicationContext.containsBean(payMethod)) {
             throw new CustomizeException("入口没有可用的支付方式");
         }

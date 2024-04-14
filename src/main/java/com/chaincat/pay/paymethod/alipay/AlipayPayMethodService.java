@@ -65,7 +65,8 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
         } catch (Exception e) {
             throw new CustomizeException("支付宝支付 关闭支付失败", e);
         }
-        Assert.isTrue(response.isSuccess(), "支付宝支付 关闭支付失败：" + response.getSubMsg());
+        Assert.isTrue(response.isSuccess() || "ACQ.TRADE_NOT_EXIST".equals(response.getSubCode()),
+                "支付宝支付 关闭支付失败：" + response.getSubMsg());
     }
 
     @Override
