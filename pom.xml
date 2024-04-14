@@ -9,10 +9,10 @@
     </parent>
 
     <groupId>com.chaincat</groupId>
-    <artifactId>pay</artifactId>
+    <artifactId>com-pay</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
-    <name>pay</name>
+    <name>com-pay</name>
     <description>支付</description>
 
     <properties>

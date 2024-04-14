@@ -45,10 +45,6 @@ public class IResultUtils {
         return result;
     }
 
-    public static <T> boolean checkAndReturn(IResult<T> result) {
-        return SUCCESS_CODE.equals(result.getCode());
-    }
-
     public static <T> void checkAndThrow(IResult<T> result) {
         Assert.isTrue(SUCCESS_CODE.equals(result.getCode()), result.getMsg());
     }
