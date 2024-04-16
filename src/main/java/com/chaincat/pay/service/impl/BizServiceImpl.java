@@ -1,6 +1,7 @@
 package com.chaincat.pay.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
@@ -81,6 +82,8 @@ public class BizServiceImpl implements BizService {
         RLock lock = redissonClient.getLock(key);
         Assert.isTrue(lock.tryLock(), "操作频繁，请稍后再试");
         try {
+            closeNotPay(req);
+
             LocalDateTime now = LocalDateTime.now();
             Assert.isTrue(now.isBefore(req.getExpireTime()), "支付过期时间必须大于当前时间");
 
@@ -102,6 +105,27 @@ public class BizServiceImpl implements BizService {
             return resp;
         } finally {
             lock.unlock();
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void closeNotPay(PrepayReq req) {
+        List<PayTransaction> payTransactions = payTransactionMapper.selectList(Wrappers.<PayTransaction>lambdaQuery()
+                .eq(PayTransaction::getBiz, req.getBiz())
+                .eq(PayTransaction::getBizDataId, req.getBizDataId()));
+        if (CollUtil.isEmpty(payTransactions)) {
+            return;
+        }
+        for (PayTransaction payTransaction : payTransactions) {
+            if (PayStatusEnum.PAY_SUCCESS.valueEquals(payTransaction.getStatus())) {
+                throw new CustomizeException("业务已完成支付");
+            }
+            if (PayStatusEnum.PAY_CLOSED.valueEquals(payTransaction.getStatus())) {
+                continue;
+            }
+            ClosePayReq closePayReq = new ClosePayReq();
+            closePayReq.setTransactionId(payTransaction.getTransactionId());
+            closePay(closePayReq);
         }
     }
 
