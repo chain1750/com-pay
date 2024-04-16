@@ -1,6 +1,5 @@
 package com.chaincat.pay.exception;
 
-import com.alibaba.fastjson.JSON;
 import com.chaincat.pay.model.IResult;
 import com.chaincat.pay.utils.IResultUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +31,7 @@ public class GlobalExceptionHandler {
         List<String> errors = e.getAllErrors().stream()
                 .map(ObjectError::getDefaultMessage)
                 .collect(Collectors.toList());
-        String msg = JSON.toJSONString(errors);
+        String msg = String.join(",", errors);
         log.warn("参数校验异常：{}", msg);
         return IResultUtils.fail(msg);
     }
