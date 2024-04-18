@@ -1,4 +1,4 @@
-package com.chaincat.pay.strategy;
+package com.chaincat.pay.paymethod;
 
 import cn.hutool.core.util.StrUtil;
 import com.chaincat.pay.config.EntranceProperties;
@@ -6,25 +6,26 @@ import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.entity.RefundTransaction;
 import com.chaincat.pay.exception.CustomizeException;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
-import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
- * 策略选择器
+ * 默认统一支付方式Service
  *
  * @author chenhaizhuang
  */
 @Slf4j
 @Service
+@Primary
 @RefreshScope
-public class StrategySelector implements GlobalPayMethodService {
+public class DefaultGlobalPayMethodService implements GlobalPayMethodService {
 
     @Autowired
     private EntranceProperties entranceProperties;

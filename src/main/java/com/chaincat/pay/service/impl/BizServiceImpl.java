@@ -22,8 +22,8 @@ import com.chaincat.pay.model.req.RefundReq;
 import com.chaincat.pay.model.resp.PrepayResp;
 import com.chaincat.pay.model.resp.QueryPayResp;
 import com.chaincat.pay.model.resp.RefundResp;
+import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import com.chaincat.pay.service.BizService;
-import com.chaincat.pay.strategy.StrategySelector;
 import com.chaincat.pay.utils.IdUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -65,7 +65,7 @@ public class BizServiceImpl implements BizService {
     private RocketMQTemplate rocketMqTemplate;
 
     @Autowired
-    private StrategySelector strategySelector;
+    private GlobalPayMethodService payMethodService;
 
     @Autowired
     @Qualifier("notifyExecutor")
@@ -95,7 +95,7 @@ public class BizServiceImpl implements BizService {
             log.info("创建支付交易：{}", payTransaction);
 
             // 预支付
-            String prepay = strategySelector.prepay(payTransaction);
+            String prepay = payMethodService.prepay(payTransaction);
             log.info("预支付：{}", prepay);
 
             // 预支付结果
@@ -154,7 +154,7 @@ public class BizServiceImpl implements BizService {
             log.info("关闭支付更新支付交易：{}", payTransaction);
 
             // 关闭支付
-            strategySelector.closePay(payTransaction);
+            payMethodService.closePay(payTransaction);
         } catch (InterruptedException e) {
             throw new CustomizeException("关闭支付获取锁失败", e);
         } finally {
@@ -186,7 +186,7 @@ public class BizServiceImpl implements BizService {
             } while (!locked);
 
             // 查询支付
-            TransactionResultDTO transactionResult = strategySelector.queryPay(payTransaction);
+            TransactionResultDTO transactionResult = payMethodService.queryPay(payTransaction);
             log.info("查询支付：{}", transactionResult);
 
             // 更新
@@ -214,7 +214,7 @@ public class BizServiceImpl implements BizService {
         Integer status = transactionResult.getStatus();
         if (PayStatusEnum.NOT_PAY.valueEquals(status) && LocalDateTime.now().isAfter(payTransaction.getExpireTime())) {
             log.info("支付交易过期，关闭支付：{}", payTransaction.getTransactionId());
-            strategySelector.closePay(payTransaction);
+            payMethodService.closePay(payTransaction);
             transactionResult.setStatus(PayStatusEnum.PAY_CLOSED.getValue());
         }
 
@@ -234,7 +234,7 @@ public class BizServiceImpl implements BizService {
     @Override
     public String payNotify(HttpServletRequest request, String entrance) {
         // 解析支付通知
-        TransactionResultDTO transactionResult = strategySelector.parsePayNotify(request, entrance);
+        TransactionResultDTO transactionResult = payMethodService.parsePayNotify(request, entrance);
         log.info("解析支付通知：{}", transactionResult);
 
         // 异步执行处理
@@ -340,7 +340,7 @@ public class BizServiceImpl implements BizService {
 
             // 退款
             refundTransaction.setPayTransaction(payTransaction);
-            strategySelector.refund(refundTransaction);
+            payMethodService.refund(refundTransaction);
 
             // 退款交易ID
             RefundResp resp = new RefundResp();
@@ -354,7 +354,7 @@ public class BizServiceImpl implements BizService {
     @Override
     public String refundNotify(HttpServletRequest request, String entrance) {
         // 解析退款通知
-        TransactionResultDTO transactionResult = strategySelector.parseRefundNotify(request, entrance);
+        TransactionResultDTO transactionResult = payMethodService.parseRefundNotify(request, entrance);
         log.info("解析退款通知：{}", transactionResult);
 
         // 异步执行处理
@@ -453,7 +453,7 @@ public class BizServiceImpl implements BizService {
 
             // 查询退款
             refundTransaction.setPayTransaction(payTransaction);
-            TransactionResultDTO transactionResult = strategySelector.queryRefund(refundTransaction);
+            TransactionResultDTO transactionResult = payMethodService.queryRefund(refundTransaction);
 
             // 更新退款交易
             refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
