@@ -95,6 +95,7 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
     }
 
     @Override
+    @SuppressWarnings("all")
     public TransactionResultDTO parsePayNotify(HttpServletRequest request, String entrance) {
         Map<String, String> requestParam = new HashMap<>();
         Map<String, String> paramMap = ServletUtil.getParamMap(request);
@@ -195,6 +196,7 @@ public abstract class AlipayPayMethodService implements GlobalPayMethodService {
     }
 
     @Override
+    @SuppressWarnings("all")
     public TransactionResultDTO parseRefundNotify(HttpServletRequest request, String entrance) {
         Map<String, String> requestParam = new HashMap<>();
         Map<String, String> paramMap = ServletUtil.getParamMap(request);

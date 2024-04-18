@@ -49,6 +49,7 @@ public class WeChatJSAPIPayMethodService extends WeChatPayMethodService {
     }
 
     @Override
+    @SuppressWarnings("all")
     public String prepay(PayTransaction payTransaction) {
         String entrance = payTransaction.getEntrance();
 

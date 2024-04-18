@@ -377,6 +377,7 @@ public class BizServiceImpl implements BizService {
      *
      * @param transactionResult 交易结果
      */
+    @SuppressWarnings("all")
     private void handleRefundNotify(TransactionResultDTO transactionResult) {
         String transactionId = transactionResult.getTransactionId();
         String key = StrUtil.format(RedisKeyConst.LOCK_REFUND_QUERY, transactionId);
@@ -433,6 +434,7 @@ public class BizServiceImpl implements BizService {
      *
      * @param refundTransaction 退款交易
      */
+    @SuppressWarnings("all")
     private void handleInRefundTask(RefundTransaction refundTransaction) {
         String transactionId = refundTransaction.getTransactionId();
         String key = StrUtil.format(RedisKeyConst.LOCK_REFUND_QUERY, transactionId);

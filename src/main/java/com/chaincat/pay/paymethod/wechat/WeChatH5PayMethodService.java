@@ -40,6 +40,7 @@ public class WeChatH5PayMethodService extends WeChatPayMethodService {
     }
 
     @Override
+    @SuppressWarnings("all")
     public String prepay(PayTransaction payTransaction) {
         String entrance = payTransaction.getEntrance();
 
