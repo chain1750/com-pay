@@ -2,6 +2,7 @@ package com.chaincat.pay.paymethod.wechat;
 
 import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
+import com.chaincat.pay.enums.ThirdpartyTypeEnum;
 import com.chaincat.pay.exception.CustomizeException;
 import com.chaincat.pay.feign.baseuser.ThirdpartyUserClient;
 import com.chaincat.pay.feign.baseuser.req.ThirdpartyUserOpenIdGetReq;
@@ -87,8 +88,9 @@ public class WeChatJSAPIPayMethodService extends WeChatPayMethodService {
 
         ThirdpartyUserOpenIdGetReq req = new ThirdpartyUserOpenIdGetReq();
         req.setUserId(payTransaction.getUserId());
+        req.setThirdpartyType(ThirdpartyTypeEnum.WECHAT.getValue());
         req.setAppId(appId);
-        IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getEntranceOpenId(req);
+        IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
         IResultUtils.checkAndThrow(result);
         return result.getData().getOpenId();
     }

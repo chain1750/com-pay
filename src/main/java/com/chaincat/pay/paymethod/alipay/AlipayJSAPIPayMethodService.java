@@ -8,6 +8,7 @@ import com.alipay.api.request.AlipayTradeCreateRequest;
 import com.alipay.api.response.AlipayTradeCreateResponse;
 import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
+import com.chaincat.pay.enums.ThirdpartyTypeEnum;
 import com.chaincat.pay.exception.CustomizeException;
 import com.chaincat.pay.feign.baseuser.ThirdpartyUserClient;
 import com.chaincat.pay.feign.baseuser.req.ThirdpartyUserOpenIdGetReq;
@@ -79,8 +80,9 @@ public class AlipayJSAPIPayMethodService extends AlipayPayMethodService {
 
         ThirdpartyUserOpenIdGetReq req = new ThirdpartyUserOpenIdGetReq();
         req.setUserId(payTransaction.getUserId());
+        req.setThirdpartyType(ThirdpartyTypeEnum.ALIPAY.getValue());
         req.setAppId(appId);
-        IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getEntranceOpenId(req);
+        IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
         IResultUtils.checkAndThrow(result);
         return result.getData().getOpenId();
     }

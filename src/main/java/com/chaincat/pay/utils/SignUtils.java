@@ -1,4 +1,4 @@
-package com.chaincat.pay.paymethod.wallet.utils;
+package com.chaincat.pay.utils;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;

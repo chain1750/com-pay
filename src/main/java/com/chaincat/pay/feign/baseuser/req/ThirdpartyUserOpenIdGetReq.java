@@ -16,6 +16,11 @@ public class ThirdpartyUserOpenIdGetReq {
     private String userId;
 
     /**
+     * 第三方类型
+     */
+    private Integer thirdpartyType;
+
+    /**
      * 应用ID
      */
     private String appId;

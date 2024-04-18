@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * 全局配置
+ * 入口配置
  *
  * @author chenhaizhuang
  */

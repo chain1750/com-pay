@@ -1,16 +1,16 @@
-package com.chaincat.pay.paymethod.wallet.model.req;
+package com.chaincat.pay.feign.baseuser.req;
 
 import lombok.Data;
 
 import java.math.BigDecimal;
 
 /**
- * 退款请求
+ * 钱包退款请求
  *
  * @author chenhaizhuang
  */
 @Data
-public class RefundReq {
+public class WalletRefundReq {
 
     /**
      * 对应支付的交易ID

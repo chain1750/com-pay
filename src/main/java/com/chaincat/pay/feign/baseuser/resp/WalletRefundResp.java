@@ -1,16 +1,16 @@
-package com.chaincat.pay.paymethod.wallet.model.resp;
+package com.chaincat.pay.feign.baseuser.resp;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 /**
- * 支付结果
+ * 钱包退款结果
  *
  * @author chenhaizhuang
  */
 @Data
-public class TransactionResp {
+public class WalletRefundResp {
 
     /**
      * 外部交易ID

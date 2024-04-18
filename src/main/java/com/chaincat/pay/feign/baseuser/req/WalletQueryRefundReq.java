@@ -1,14 +1,14 @@
-package com.chaincat.pay.paymethod.wallet.model.req;
+package com.chaincat.pay.feign.baseuser.req;
 
 import lombok.Data;
 
 /**
- * 查询请求
+ * 钱包查询退款请求
  *
  * @author chenhaizhuang
  */
 @Data
-public class QueryReq {
+public class WalletQueryRefundReq {
 
     /**
      * 外部交易ID

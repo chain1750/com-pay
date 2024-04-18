@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 线程池工厂
@@ -21,7 +22,16 @@ public class ExecutorFactoryConfig {
      */
     @Bean(name = "notifyExecutor")
     public Executor notifyExecutor() {
-        return createExecutor("notify-executor-");
+        int corePoolSize = Runtime.getRuntime().availableProcessors();
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(corePoolSize * 2);
+        executor.setQueueCapacity(1000);
+        executor.setKeepAliveSeconds(300);
+        executor.setThreadNamePrefix("notify-executor-");
+        // 如果同时处理的通知太多，则直接报错
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        return executor;
     }
 
     /**
@@ -31,28 +41,15 @@ public class ExecutorFactoryConfig {
      */
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
-        return createExecutor("task-executor-");
-    }
-
-    /**
-     * 创建线程池
-     *
-     * @param prefix 前缀
-     * @return Executor
-     */
-    private Executor createExecutor(String prefix) {
-        int processNum = Runtime.getRuntime().availableProcessors();
-        int corePoolSize = (int) (processNum / (1 - 0.2));
-        int maxPoolSize = (int) (processNum / (1 - 0.5));
-
+        int corePoolSize = Runtime.getRuntime().availableProcessors();
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(maxPoolSize * 1000);
-        executor.setThreadPriority(Thread.MAX_PRIORITY);
-        executor.setDaemon(false);
+        executor.setMaxPoolSize(corePoolSize * 2);
+        executor.setQueueCapacity(1000);
         executor.setKeepAliveSeconds(300);
-        executor.setThreadNamePrefix(prefix);
+        executor.setThreadNamePrefix("task-executor-");
+        // 定时任务如果超过线程池任务数量则直接拒绝，由下次定时触发再执行
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         return executor;
     }
 }

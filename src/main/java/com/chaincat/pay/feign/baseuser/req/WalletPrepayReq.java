@@ -1,4 +1,4 @@
-package com.chaincat.pay.paymethod.wallet.model.req;
+package com.chaincat.pay.feign.baseuser.req;
 
 import lombok.Data;
 
@@ -6,12 +6,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 预支付请求
+ * 钱包预支付请求
  *
  * @author chenhaizhuang
  */
 @Data
-public class PrepayReq {
+public class WalletPrepayReq {
 
     /**
      * 用户ID

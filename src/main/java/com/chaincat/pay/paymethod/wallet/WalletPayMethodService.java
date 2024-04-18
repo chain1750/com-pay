@@ -7,16 +7,19 @@ import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.entity.RefundTransaction;
 import com.chaincat.pay.feign.baseuser.WalletClient;
+import com.chaincat.pay.feign.baseuser.req.WalletClosePayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletQueryRefundReq;
+import com.chaincat.pay.feign.baseuser.resp.WalletPayResp;
 import com.chaincat.pay.model.IResult;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
 import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import com.chaincat.pay.paymethod.wallet.config.WalletPayProperties;
-import com.chaincat.pay.paymethod.wallet.model.req.PrepayReq;
-import com.chaincat.pay.paymethod.wallet.model.req.QueryReq;
-import com.chaincat.pay.paymethod.wallet.model.req.RefundReq;
-import com.chaincat.pay.paymethod.wallet.model.resp.PrepayResp;
-import com.chaincat.pay.paymethod.wallet.model.resp.TransactionResp;
-import com.chaincat.pay.paymethod.wallet.utils.SignUtils;
+import com.chaincat.pay.feign.baseuser.req.WalletPrepayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletQueryPayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletRefundReq;
+import com.chaincat.pay.feign.baseuser.resp.WalletPrepayResp;
+import com.chaincat.pay.feign.baseuser.resp.WalletRefundResp;
+import com.chaincat.pay.utils.SignUtils;
 import com.chaincat.pay.utils.IResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +47,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
 
     @Override
     public String prepay(PayTransaction payTransaction) {
-        PrepayReq req = new PrepayReq();
+        WalletPrepayReq req = new WalletPrepayReq();
         req.setUserId(payTransaction.getUserId());
         req.setOutTransactionId(payTransaction.getTransactionId());
         req.setAmount(payTransaction.getAmount());
@@ -52,14 +55,14 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setExpireTime(payTransaction.getExpireTime());
         req.setNotifyUrl(notifyUrlProperties.getPayNotifyUrl(payTransaction.getEntrance()));
 
-        IResult<PrepayResp> result = walletClient.prepay(req);
+        IResult<WalletPrepayResp> result = walletClient.prepay(req);
         IResultUtils.checkAndThrow(result);
         return JSON.toJSONString(result.getData());
     }
 
     @Override
     public void closePay(PayTransaction payTransaction) {
-        QueryReq req = new QueryReq();
+        WalletClosePayReq req = new WalletClosePayReq();
         req.setOutTransactionId(payTransaction.getTransactionId());
 
         IResult<Void> result = walletClient.closePay(req);
@@ -68,18 +71,18 @@ public class WalletPayMethodService implements GlobalPayMethodService {
 
     @Override
     public TransactionResultDTO queryPay(PayTransaction payTransaction) {
-        QueryReq req = new QueryReq();
+        WalletQueryPayReq req = new WalletQueryPayReq();
         req.setOutTransactionId(payTransaction.getTransactionId());
 
-        IResult<TransactionResp> result = walletClient.queryPay(req);
+        IResult<WalletPayResp> result = walletClient.queryPay(req);
         IResultUtils.checkAndThrow(result);
-        TransactionResp transactionResp = result.getData();
+        WalletPayResp walletPayResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
-        transactionResult.setTransactionId(transactionResp.getOutTransactionId());
-        transactionResult.setPayMethodTransactionId(transactionResp.getTransactionId());
-        transactionResult.setStatus(transactionResp.getStatus());
-        transactionResult.setFinishTime(transactionResp.getFinishTime());
+        transactionResult.setTransactionId(walletPayResp.getOutTransactionId());
+        transactionResult.setPayMethodTransactionId(walletPayResp.getTransactionId());
+        transactionResult.setStatus(walletPayResp.getStatus());
+        transactionResult.setFinishTime(walletPayResp.getFinishTime());
         return transactionResult;
     }
 
@@ -88,13 +91,13 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         String body = ServletUtil.getBody(request);
         JSONObject requestBody = JSON.parseObject(body);
         SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
-        TransactionResp transactionResp = JSON.parseObject(body, TransactionResp.class);
+        WalletPayResp walletPayResp = JSON.parseObject(body, WalletPayResp.class);
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
-        transactionResult.setTransactionId(transactionResp.getOutTransactionId());
-        transactionResult.setPayMethodTransactionId(transactionResp.getTransactionId());
-        transactionResult.setStatus(transactionResp.getStatus());
-        transactionResult.setFinishTime(transactionResp.getFinishTime());
+        transactionResult.setTransactionId(walletPayResp.getOutTransactionId());
+        transactionResult.setPayMethodTransactionId(walletPayResp.getTransactionId());
+        transactionResult.setStatus(walletPayResp.getStatus());
+        transactionResult.setFinishTime(walletPayResp.getFinishTime());
         return transactionResult;
     }
 
@@ -102,7 +105,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
     public void refund(RefundTransaction refundTransaction) {
         PayTransaction payTransaction = refundTransaction.getPayTransaction();
 
-        RefundReq req = new RefundReq();
+        WalletRefundReq req = new WalletRefundReq();
         req.setPayOutTransactionId(payTransaction.getTransactionId());
         req.setOutTransactionId(refundTransaction.getTransactionId());
         req.setAmount(refundTransaction.getAmount());
@@ -115,18 +118,18 @@ public class WalletPayMethodService implements GlobalPayMethodService {
 
     @Override
     public TransactionResultDTO queryRefund(RefundTransaction refundTransaction) {
-        QueryReq req = new QueryReq();
+        WalletQueryRefundReq req = new WalletQueryRefundReq();
         req.setOutTransactionId(refundTransaction.getTransactionId());
 
-        IResult<TransactionResp> result = walletClient.queryRefund(req);
+        IResult<WalletRefundResp> result = walletClient.queryRefund(req);
         IResultUtils.checkAndThrow(result);
-        TransactionResp transactionResp = result.getData();
+        WalletRefundResp walletRefundResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
-        transactionResult.setTransactionId(transactionResp.getOutTransactionId());
-        transactionResult.setPayMethodTransactionId(transactionResp.getTransactionId());
-        transactionResult.setStatus(transactionResp.getStatus());
-        transactionResult.setFinishTime(transactionResp.getFinishTime());
+        transactionResult.setTransactionId(walletRefundResp.getOutTransactionId());
+        transactionResult.setPayMethodTransactionId(walletRefundResp.getTransactionId());
+        transactionResult.setStatus(walletRefundResp.getStatus());
+        transactionResult.setFinishTime(walletRefundResp.getFinishTime());
         return transactionResult;
     }
 
@@ -135,13 +138,13 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         String body = ServletUtil.getBody(request);
         JSONObject requestBody = JSON.parseObject(body);
         SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
-        TransactionResp transactionResp = JSON.parseObject(body, TransactionResp.class);
+        WalletRefundResp walletRefundResp = JSON.parseObject(body, WalletRefundResp.class);
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
-        transactionResult.setTransactionId(transactionResp.getOutTransactionId());
-        transactionResult.setPayMethodTransactionId(transactionResp.getTransactionId());
-        transactionResult.setStatus(transactionResp.getStatus());
-        transactionResult.setFinishTime(transactionResp.getFinishTime());
+        transactionResult.setTransactionId(walletRefundResp.getOutTransactionId());
+        transactionResult.setPayMethodTransactionId(walletRefundResp.getTransactionId());
+        transactionResult.setStatus(walletRefundResp.getStatus());
+        transactionResult.setFinishTime(walletRefundResp.getFinishTime());
         return transactionResult;
     }
 }

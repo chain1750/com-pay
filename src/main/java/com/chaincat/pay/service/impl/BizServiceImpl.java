@@ -82,6 +82,7 @@ public class BizServiceImpl implements BizService {
         RLock lock = redissonClient.getLock(key);
         Assert.isTrue(lock.tryLock(), "操作频繁，请稍后再试");
         try {
+            // 关闭未支付
             closeNotPay(req);
 
             LocalDateTime now = LocalDateTime.now();
@@ -110,12 +111,17 @@ public class BizServiceImpl implements BizService {
 
     @Transactional(rollbackFor = Exception.class)
     public void closeNotPay(PrepayReq req) {
+        // 查询该业务下的交易
         List<PayTransaction> payTransactions = payTransactionMapper.selectList(Wrappers.<PayTransaction>lambdaQuery()
                 .eq(PayTransaction::getBiz, req.getBiz())
                 .eq(PayTransaction::getBizDataId, req.getBizDataId()));
         if (CollUtil.isEmpty(payTransactions)) {
             return;
         }
+        /*
+        如果存在已支付，则报错
+        如果存在未支付，则关闭该支付
+         */
         for (PayTransaction payTransaction : payTransactions) {
             if (PayStatusEnum.PAY_SUCCESS.valueEquals(payTransaction.getStatus())) {
                 throw new CustomizeException("业务已完成支付");

@@ -1,11 +1,14 @@
 package com.chaincat.pay.feign.baseuser;
 
+import com.chaincat.pay.feign.baseuser.req.WalletClosePayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletQueryRefundReq;
+import com.chaincat.pay.feign.baseuser.resp.WalletPayResp;
 import com.chaincat.pay.model.IResult;
-import com.chaincat.pay.paymethod.wallet.model.req.PrepayReq;
-import com.chaincat.pay.paymethod.wallet.model.req.QueryReq;
-import com.chaincat.pay.paymethod.wallet.model.req.RefundReq;
-import com.chaincat.pay.paymethod.wallet.model.resp.PrepayResp;
-import com.chaincat.pay.paymethod.wallet.model.resp.TransactionResp;
+import com.chaincat.pay.feign.baseuser.req.WalletPrepayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletQueryPayReq;
+import com.chaincat.pay.feign.baseuser.req.WalletRefundReq;
+import com.chaincat.pay.feign.baseuser.resp.WalletPrepayResp;
+import com.chaincat.pay.feign.baseuser.resp.WalletRefundResp;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -25,7 +28,7 @@ public interface WalletClient {
      * @return IResult
      */
     @PostMapping("/prepay")
-    IResult<PrepayResp> prepay(PrepayReq req);
+    IResult<WalletPrepayResp> prepay(WalletPrepayReq req);
 
     /**
      * 关闭支付
@@ -34,7 +37,7 @@ public interface WalletClient {
      * @return IResult
      */
     @PostMapping("/closePay")
-    IResult<Void> closePay(QueryReq req);
+    IResult<Void> closePay(WalletClosePayReq req);
 
     /**
      * 查询支付
@@ -43,7 +46,7 @@ public interface WalletClient {
      * @return IResult
      */
     @PostMapping("/queryPay")
-    IResult<TransactionResp> queryPay(QueryReq req);
+    IResult<WalletPayResp> queryPay(WalletQueryPayReq req);
 
     /**
      * 退款
@@ -52,7 +55,7 @@ public interface WalletClient {
      * @return IResult
      */
     @PostMapping("/refund")
-    IResult<Void> refund(RefundReq req);
+    IResult<Void> refund(WalletRefundReq req);
 
     /**
      * 查询退款
@@ -61,5 +64,5 @@ public interface WalletClient {
      * @return IResult
      */
     @PostMapping("/queryRefund")
-    IResult<TransactionResp> queryRefund(QueryReq req);
+    IResult<WalletRefundResp> queryRefund(WalletQueryRefundReq req);
 }

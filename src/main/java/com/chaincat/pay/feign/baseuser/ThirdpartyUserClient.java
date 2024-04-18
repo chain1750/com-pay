@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 public interface ThirdpartyUserClient {
 
     /**
-     * 获取入口OpenID
+     * 获取第三方用户OpenID
      *
      * @param req 请求
      * @return IResult
      */
-    @GetMapping("/getEntranceOpenId")
-    IResult<ThirdpartyUserOpenIdGetResp> getEntranceOpenId(ThirdpartyUserOpenIdGetReq req);
+    @GetMapping("/getThirdpartyUserOpenId")
+    IResult<ThirdpartyUserOpenIdGetResp> getThirdpartyUserOpenId(ThirdpartyUserOpenIdGetReq req);
 }

@@ -1,16 +1,16 @@
-package com.chaincat.pay.paymethod.wallet.model.resp;
+package com.chaincat.pay.feign.baseuser.resp;
 
 import lombok.Data;
 
 import java.math.BigDecimal;
 
 /**
- * 预支付结果
+ * 钱包预支付结果
  *
  * @author chenhaizhuang
  */
 @Data
-public class PrepayResp {
+public class WalletPrepayResp {
 
     /**
      * 余额
