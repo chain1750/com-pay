@@ -1,5 +1,6 @@
 package com.chaincat.pay.paymethod.wallet;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.extra.servlet.ServletUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -56,7 +57,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setNotifyUrl(notifyUrlProperties.getPayNotifyUrl(payTransaction.getEntrance()));
 
         IResult<WalletPrepayResp> result = walletClient.prepay(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 预支付失败：" + result.getMsg());
         return JSON.toJSONString(result.getData());
     }
 
@@ -66,7 +67,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(payTransaction.getTransactionId());
 
         IResult<Void> result = walletClient.closePay(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 关闭支付失败：" + result.getMsg());
     }
 
     @Override
@@ -75,7 +76,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(payTransaction.getTransactionId());
 
         IResult<WalletPayResp> result = walletClient.queryPay(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 查询支付失败：" + result.getMsg());
         WalletPayResp walletPayResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
@@ -90,7 +91,9 @@ public class WalletPayMethodService implements GlobalPayMethodService {
     public TransactionResultDTO parsePayNotify(HttpServletRequest request, String entrance) {
         String body = ServletUtil.getBody(request);
         JSONObject requestBody = JSON.parseObject(body);
-        SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
+        boolean verify =
+                SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
+        Assert.isTrue(verify, "钱包支付 解析支付通知失败");
         WalletPayResp walletPayResp = JSON.parseObject(body, WalletPayResp.class);
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
@@ -113,7 +116,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setNotifyUrl(notifyUrlProperties.getRefundNotifyUrl(payTransaction.getEntrance()));
 
         IResult<Void> result = walletClient.refund(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 退款失败：" + result.getMsg());
     }
 
     @Override
@@ -122,7 +125,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(refundTransaction.getTransactionId());
 
         IResult<WalletRefundResp> result = walletClient.queryRefund(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 查询退款失败：" + result.getMsg());
         WalletRefundResp walletRefundResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
@@ -137,7 +140,9 @@ public class WalletPayMethodService implements GlobalPayMethodService {
     public TransactionResultDTO parseRefundNotify(HttpServletRequest request, String entrance) {
         String body = ServletUtil.getBody(request);
         JSONObject requestBody = JSON.parseObject(body);
-        SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
+        boolean verify =
+                SignUtils.verify(requestBody, walletPayProperties.getSalt(), walletPayProperties.getSignParamKey());
+        Assert.isTrue(verify, "钱包支付 解析退款通知失败");
         WalletRefundResp walletRefundResp = JSON.parseObject(body, WalletRefundResp.class);
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();

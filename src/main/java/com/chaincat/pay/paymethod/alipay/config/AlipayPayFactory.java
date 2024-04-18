@@ -24,10 +24,7 @@ public class AlipayPayFactory {
         Optional<AlipayPayProperties.Account> optionalAccount = alipayPayProperties.getAccounts().stream()
                 .filter(e -> e.getApps().containsKey(appId))
                 .findFirst();
-        if (optionalAccount.isEmpty()) {
-            throw new CustomizeException("入口没有可用的支付方式");
-        }
-        return optionalAccount.get();
+        return optionalAccount.orElseThrow(() -> new CustomizeException("入口没有可用的支付方式"));
     }
 
     public static synchronized AlipayClient getAlipayClient(AlipayPayProperties alipayPayProperties,

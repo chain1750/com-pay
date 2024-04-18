@@ -40,10 +40,7 @@ public class WeChatPayFactory {
         Optional<WeChatPayProperties.Merchant> optionalMerchant = weChatPayProperties.getMerchants().stream()
                 .filter(e -> e.getAppIds().contains(appId))
                 .findFirst();
-        if (optionalMerchant.isEmpty()) {
-            throw new CustomizeException("入口没有可用的支付方式");
-        }
-        return optionalMerchant.get();
+        return optionalMerchant.orElseThrow(() -> new CustomizeException("入口没有可用的支付方式"));
     }
 
     public static synchronized RSAAutoCertificateConfig getRsaAutoCertificateConfig(WeChatPayProperties weChatPayProperties,

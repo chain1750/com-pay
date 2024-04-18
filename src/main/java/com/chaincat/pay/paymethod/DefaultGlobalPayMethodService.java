@@ -1,10 +1,10 @@
 package com.chaincat.pay.paymethod;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.StrUtil;
 import com.chaincat.pay.config.EntranceProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.entity.RefundTransaction;
-import com.chaincat.pay.exception.CustomizeException;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +42,8 @@ public class DefaultGlobalPayMethodService implements GlobalPayMethodService {
     private GlobalPayMethodService select(String entrance) {
         Map<String, String> map = entranceProperties.getEntrances();
         String payMethod = map.getOrDefault(entrance, "");
-        if (StrUtil.isEmpty(payMethod) || !applicationContext.containsBean(payMethod)) {
-            throw new CustomizeException("入口没有可用的支付方式");
-        }
+        Assert.isTrue(StrUtil.isNotEmpty(payMethod) && applicationContext.containsBean(payMethod),
+                "入口没有可用的支付方式");
         return applicationContext.getBean(map.get(entrance), GlobalPayMethodService.class);
     }
 

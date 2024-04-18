@@ -123,9 +123,7 @@ public class BizServiceImpl implements BizService {
         如果存在未支付，则关闭该支付
          */
         for (PayTransaction payTransaction : payTransactions) {
-            if (PayStatusEnum.PAY_SUCCESS.valueEquals(payTransaction.getStatus())) {
-                throw new CustomizeException("业务已完成支付");
-            }
+            Assert.isTrue(!PayStatusEnum.PAY_SUCCESS.valueEquals(payTransaction.getStatus()), "业务已完成支付");
             if (PayStatusEnum.PAY_CLOSED.valueEquals(payTransaction.getStatus())) {
                 continue;
             }

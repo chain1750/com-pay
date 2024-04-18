@@ -83,7 +83,7 @@ public class AlipayJSAPIPayMethodService extends AlipayPayMethodService {
         req.setThirdpartyType(ThirdpartyTypeEnum.ALIPAY.getValue());
         req.setAppId(appId);
         IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "支付宝小程序支付 预支付失败：" + result.getMsg());
         return result.getData().getOpenId();
     }
 }

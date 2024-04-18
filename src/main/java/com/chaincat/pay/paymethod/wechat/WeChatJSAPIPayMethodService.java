@@ -1,5 +1,6 @@
 package com.chaincat.pay.paymethod.wechat;
 
+import cn.hutool.core.lang.Assert;
 import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.enums.ThirdpartyTypeEnum;
@@ -91,7 +92,7 @@ public class WeChatJSAPIPayMethodService extends WeChatPayMethodService {
         req.setThirdpartyType(ThirdpartyTypeEnum.WECHAT.getValue());
         req.setAppId(appId);
         IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
-        IResultUtils.checkAndThrow(result);
+        Assert.isTrue(IResultUtils.isSuccess(result), "微信JSAPI支付 预支付失败：" + result.getMsg());
         return result.getData().getOpenId();
     }
 

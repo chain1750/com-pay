@@ -1,6 +1,5 @@
 package com.chaincat.pay.utils;
 
-import cn.hutool.core.lang.Assert;
 import com.chaincat.pay.model.IResult;
 
 /**
@@ -45,7 +44,7 @@ public class IResultUtils {
         return result;
     }
 
-    public static <T> void checkAndThrow(IResult<T> result) {
-        Assert.isTrue(SUCCESS_CODE.equals(result.getCode()), result.getMsg());
+    public static <T> boolean isSuccess(IResult<T> result) {
+        return SUCCESS_CODE.equals(result.getCode());
     }
 }
