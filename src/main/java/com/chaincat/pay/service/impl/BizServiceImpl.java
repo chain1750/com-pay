@@ -7,13 +7,13 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.chaincat.pay.constant.RedisKeyConst;
+import com.chaincat.pay.dao.PayTransactionDAO;
+import com.chaincat.pay.dao.RefundTransactionDAO;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.entity.RefundTransaction;
 import com.chaincat.pay.enums.PayStatusEnum;
 import com.chaincat.pay.enums.RefundStatusEnum;
 import com.chaincat.pay.exception.CustomizeException;
-import com.chaincat.pay.mapper.PayTransactionMapper;
-import com.chaincat.pay.mapper.RefundTransactionMapper;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
 import com.chaincat.pay.model.req.ClosePayReq;
 import com.chaincat.pay.model.req.PrepayReq;
@@ -53,10 +53,10 @@ import java.util.concurrent.TimeUnit;
 public class BizServiceImpl implements BizService {
 
     @Autowired
-    private PayTransactionMapper payTransactionMapper;
+    private PayTransactionDAO payTransactionDAO;
 
     @Autowired
-    private RefundTransactionMapper refundTransactionMapper;
+    private RefundTransactionDAO refundTransactionDAO;
 
     @Autowired
     private RedissonClient redissonClient;
@@ -92,7 +92,7 @@ public class BizServiceImpl implements BizService {
             PayTransaction payTransaction = BeanUtil.copyProperties(req, PayTransaction.class);
             payTransaction.setTransactionId(IdUtils.generateTransactionId("10001", now));
             payTransaction.setStatus(PayStatusEnum.NOT_PAY.getValue());
-            payTransactionMapper.insert(payTransaction);
+            payTransactionDAO.save(payTransaction);
             log.info("创建支付交易：{}", payTransaction);
 
             // 预支付
@@ -112,7 +112,7 @@ public class BizServiceImpl implements BizService {
     @Transactional(rollbackFor = Exception.class)
     public void closeNotPay(PrepayReq req) {
         // 查询该业务下的交易
-        List<PayTransaction> payTransactions = payTransactionMapper.selectList(Wrappers.<PayTransaction>lambdaQuery()
+        List<PayTransaction> payTransactions = payTransactionDAO.list(Wrappers.<PayTransaction>lambdaQuery()
                 .eq(PayTransaction::getBiz, req.getBiz())
                 .eq(PayTransaction::getBizDataId, req.getBizDataId()));
         if (CollUtil.isEmpty(payTransactions)) {
@@ -145,7 +145,7 @@ public class BizServiceImpl implements BizService {
             // 锁单循环，避免其它操作冲突
             do {
                 locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+                payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
                         .eq(PayTransaction::getTransactionId, transactionId));
                 Assert.notNull(payTransaction, "支付交易不存在");
                 Assert.isTrue(PayStatusEnum.NOT_PAY.valueEquals(payTransaction.getStatus()),
@@ -154,7 +154,7 @@ public class BizServiceImpl implements BizService {
 
             // 更新支付交易
             payTransaction.setStatus(PayStatusEnum.PAY_CLOSED.getValue());
-            payTransactionMapper.updateById(payTransaction);
+            payTransactionDAO.updateById(payTransaction);
             log.info("关闭支付更新支付交易：{}", payTransaction);
 
             // 关闭支付
@@ -180,7 +180,7 @@ public class BizServiceImpl implements BizService {
             // 锁单循环，避免其它操作冲突
             do {
                 locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+                payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
                         .eq(PayTransaction::getTransactionId, transactionId));
                 Assert.notNull(payTransaction, "支付交易不存在");
                 // 已支付/已关闭返回支付结果
@@ -232,7 +232,7 @@ public class BizServiceImpl implements BizService {
         payTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
         payTransaction.setStatus(status);
         payTransaction.setFinishTime(transactionResult.getFinishTime());
-        payTransactionMapper.updateById(payTransaction);
+        payTransactionDAO.updateById(payTransaction);
     }
 
     @Override
@@ -267,7 +267,7 @@ public class BizServiceImpl implements BizService {
             // 锁单循环，避免其它操作冲突
             do {
                 locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+                payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
                         .eq(PayTransaction::getTransactionId, transactionId));
                 Assert.notNull(payTransaction, "支付交易不存在");
                 if (!PayStatusEnum.NOT_PAY.valueEquals(payTransaction.getStatus())) {
@@ -279,7 +279,7 @@ public class BizServiceImpl implements BizService {
             payTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
             payTransaction.setStatus(transactionResult.getStatus());
             payTransaction.setFinishTime(transactionResult.getFinishTime());
-            payTransactionMapper.updateById(payTransaction);
+            payTransactionDAO.updateById(payTransaction);
 
             // 通知业务方支付结果
             String msg = JSON.toJSONString(transactionResult);
@@ -298,7 +298,7 @@ public class BizServiceImpl implements BizService {
     @Transactional(rollbackFor = Exception.class)
     public void handleNotPay() {
         // 查询未支付的交易
-        List<PayTransaction> payTransactions = payTransactionMapper.selectList(Wrappers.<PayTransaction>lambdaQuery()
+        List<PayTransaction> payTransactions = payTransactionDAO.list(Wrappers.<PayTransaction>lambdaQuery()
                 .select(PayTransaction::getTransactionId)
                 .eq(PayTransaction::getStatus, PayStatusEnum.NOT_PAY.getValue()));
         log.info("处理未支付数量：{}", payTransactions.size());
@@ -329,7 +329,7 @@ public class BizServiceImpl implements BizService {
         RLock lock = redissonClient.getLock(key);
         Assert.isTrue(lock.tryLock(), "操作频繁，请稍后再试");
         try {
-            PayTransaction payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+            PayTransaction payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
                     .eq(PayTransaction::getTransactionId, payTransactionId));
             Assert.notNull(payTransaction, "支付交易不存在");
             Assert.isTrue(PayStatusEnum.PAY_SUCCESS.valueEquals(payTransaction.getStatus()), "交易未支付，无法退款");
@@ -339,7 +339,7 @@ public class BizServiceImpl implements BizService {
             RefundTransaction refundTransaction = BeanUtil.copyProperties(req, RefundTransaction.class);
             refundTransaction.setTransactionId(IdUtils.generateTransactionId("10002", now));
             refundTransaction.setStatus(RefundStatusEnum.IN_REFUND.getValue());
-            refundTransactionMapper.insert(refundTransaction);
+            refundTransactionDAO.save(refundTransaction);
             log.info("创建退款交易：{}", refundTransaction);
 
             // 退款
@@ -388,7 +388,7 @@ public class BizServiceImpl implements BizService {
             // 锁单循环，避免其它操作冲突
             do {
                 locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                refundTransaction = refundTransactionMapper.selectOne(Wrappers.<RefundTransaction>lambdaQuery()
+                refundTransaction = refundTransactionDAO.getOne(Wrappers.<RefundTransaction>lambdaQuery()
                         .eq(RefundTransaction::getTransactionId, transactionId));
                 Assert.notNull(refundTransaction, "退款交易不存在");
                 if (!RefundStatusEnum.IN_REFUND.valueEquals(refundTransaction.getStatus())) {
@@ -400,7 +400,7 @@ public class BizServiceImpl implements BizService {
             refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
             refundTransaction.setStatus(transactionResult.getStatus());
             refundTransaction.setFinishTime(transactionResult.getFinishTime());
-            refundTransactionMapper.updateById(refundTransaction);
+            refundTransactionDAO.updateById(refundTransaction);
         } catch (InterruptedException e) {
             throw new CustomizeException("处理退款通知获取锁失败", e);
         } finally {
@@ -413,10 +413,9 @@ public class BizServiceImpl implements BizService {
     @Override
     public void handleInRefund() {
         // 查询退款中的交易
-        List<RefundTransaction> refundTransactions = refundTransactionMapper
-                .selectList(Wrappers.<RefundTransaction>lambdaQuery()
-                        .select(RefundTransaction::getTransactionId)
-                        .eq(RefundTransaction::getStatus, RefundStatusEnum.IN_REFUND.getValue()));
+        List<RefundTransaction> refundTransactions = refundTransactionDAO.list(Wrappers.<RefundTransaction>lambdaQuery()
+                .select(RefundTransaction::getTransactionId)
+                .eq(RefundTransaction::getStatus, RefundStatusEnum.IN_REFUND.getValue()));
         log.info("处理退款中数量：{}", refundTransactions.size());
 
         // 异步执行处理
@@ -444,7 +443,7 @@ public class BizServiceImpl implements BizService {
             // 锁单循环，避免其它操作冲突
             do {
                 locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                refundTransaction = refundTransactionMapper.selectOne(Wrappers.<RefundTransaction>lambdaQuery()
+                refundTransaction = refundTransactionDAO.getOne(Wrappers.<RefundTransaction>lambdaQuery()
                         .eq(RefundTransaction::getTransactionId, transactionId));
                 Assert.notNull(refundTransaction, "退款交易不存在");
                 if (!RefundStatusEnum.IN_REFUND.valueEquals(refundTransaction.getStatus())) {
@@ -453,7 +452,7 @@ public class BizServiceImpl implements BizService {
             } while (!locked);
 
             // 查询支付交易
-            PayTransaction payTransaction = payTransactionMapper.selectOne(Wrappers.<PayTransaction>lambdaQuery()
+            PayTransaction payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
                     .eq(PayTransaction::getTransactionId, refundTransaction.getPayTransactionId()));
             Assert.notNull(payTransaction, "支付交易不存在");
 
@@ -465,7 +464,7 @@ public class BizServiceImpl implements BizService {
             refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
             refundTransaction.setStatus(transactionResult.getStatus());
             refundTransaction.setFinishTime(transactionResult.getFinishTime());
-            refundTransactionMapper.updateById(refundTransaction);
+            refundTransactionDAO.updateById(refundTransaction);
         } catch (InterruptedException e) {
             throw new CustomizeException("处理退款任务获取锁失败", e);
         } finally {
