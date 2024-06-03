@@ -1,7 +1,7 @@
 server:
-  port: 8091
+  port: 8080
   servlet:
-    context-path: /com/pay
+    context-path: /pay
 
 spring:
   application:
