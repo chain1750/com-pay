@@ -1,7 +1,6 @@
 package com.chaincat.pay.exception;
 
 import com.chaincat.pay.model.IResult;
-import com.chaincat.pay.utils.IResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
@@ -33,7 +32,7 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.toList());
         String msg = String.join(",", errors);
         log.warn("参数校验异常：{}", msg);
-        return IResultUtils.fail(msg);
+        return IResult.fail(msg);
     }
 
     /**
@@ -45,7 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = {CustomizeException.class, IllegalArgumentException.class, IllegalStateException.class})
     public IResult<Void> handleRuntimeException(RuntimeException e) {
         log.warn("业务异常：{}", e.getMessage(), e);
-        return IResultUtils.fail(e.getMessage());
+        return IResult.fail(e.getMessage());
     }
 
     /**
@@ -57,6 +56,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public IResult<Void> handleException(Exception e) {
         log.error("系统异常", e);
-        return IResultUtils.error();
+        return IResult.error();
     }
 }
