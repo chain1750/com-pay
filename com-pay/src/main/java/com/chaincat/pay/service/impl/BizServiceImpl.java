@@ -2,9 +2,10 @@ package com.chaincat.pay.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.lang.Assert;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.chaincat.pay.constant.RedisKeyConst;
 import com.chaincat.pay.dao.PayTransactionDAO;
@@ -24,23 +25,15 @@ import com.chaincat.pay.model.resp.QueryPayResp;
 import com.chaincat.pay.model.resp.RefundResp;
 import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import com.chaincat.pay.service.BizService;
-import com.chaincat.pay.utils.IdUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,18 +55,7 @@ public class BizServiceImpl implements BizService {
     private RedissonClient redissonClient;
 
     @Autowired
-    private RocketMQTemplate rocketMqTemplate;
-
-    @Autowired
     private GlobalPayMethodService payMethodService;
-
-    @Autowired
-    @Qualifier("notifyExecutor")
-    private Executor notifyExecutor;
-
-    @Autowired
-    @Qualifier("taskExecutor")
-    private Executor taskExecutor;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -88,9 +70,11 @@ public class BizServiceImpl implements BizService {
             LocalDateTime now = LocalDateTime.now();
             Assert.isTrue(now.isBefore(req.getExpireTime()), "支付过期时间必须大于当前时间");
 
+            String id = "10001" + now.format(DatePattern.PURE_DATE_FORMATTER) + IdUtil.getSnowflakeNextIdStr();
+
             // 创建支付交易
             PayTransaction payTransaction = BeanUtil.copyProperties(req, PayTransaction.class);
-            payTransaction.setTransactionId(IdUtils.generateTransactionId("10001", now));
+            payTransaction.setTransactionId(id);
             payTransaction.setStatus(PayStatusEnum.NOT_PAY.getValue());
             payTransactionDAO.save(payTransaction);
             log.info("创建支付交易：{}", payTransaction);
@@ -236,92 +220,6 @@ public class BizServiceImpl implements BizService {
     }
 
     @Override
-    public String payNotify(HttpServletRequest request, String entrance) {
-        // 解析支付通知
-        TransactionResultDTO transactionResult = payMethodService.parsePayNotify(request, entrance);
-        log.info("解析支付通知：{}", transactionResult);
-
-        // 异步执行处理
-        CompletableFuture.runAsync(() -> handlePayNotify(transactionResult), notifyExecutor)
-                .exceptionally(e -> {
-                    log.error("处理支付通知失败", e);
-                    return null;
-                });
-
-        // 返回通知结果
-        return transactionResult.getNotifyResult();
-    }
-
-    /**
-     * 处理支付通知
-     *
-     * @param transactionResult 交易结果
-     */
-    private void handlePayNotify(TransactionResultDTO transactionResult) {
-        String transactionId = transactionResult.getTransactionId();
-        String key = StrUtil.format(RedisKeyConst.LOCK_PAY, transactionId);
-        RLock lock = redissonClient.getLock(key);
-        boolean locked = false;
-        PayTransaction payTransaction;
-        try {
-            // 锁单循环，避免其它操作冲突
-            do {
-                locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
-                        .eq(PayTransaction::getTransactionId, transactionId));
-                Assert.notNull(payTransaction, "支付交易不存在");
-                if (!PayStatusEnum.NOT_PAY.valueEquals(payTransaction.getStatus())) {
-                    return;
-                }
-            } while (!locked);
-
-            // 更新支付交易
-            payTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
-            payTransaction.setStatus(transactionResult.getStatus());
-            payTransaction.setFinishTime(transactionResult.getFinishTime());
-            payTransactionDAO.updateById(payTransaction);
-
-            // 通知业务方支付结果
-            String msg = JSON.toJSONString(transactionResult);
-            Message<String> message = MessageBuilder.withPayload(msg).build();
-            rocketMqTemplate.send(payTransaction.getBizMqTopic(), message);
-        } catch (InterruptedException e) {
-            throw new CustomizeException("处理支付通知获取锁失败", e);
-        } finally {
-            if (locked) {
-                lock.unlock();
-            }
-        }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void handleNotPay() {
-        // 查询未支付的交易
-        List<PayTransaction> payTransactions = payTransactionDAO.list(Wrappers.<PayTransaction>lambdaQuery()
-                .select(PayTransaction::getTransactionId)
-                .eq(PayTransaction::getStatus, PayStatusEnum.NOT_PAY.getValue()));
-        log.info("处理未支付数量：{}", payTransactions.size());
-
-        // 异步执行处理
-        payTransactions.forEach(payTransaction -> CompletableFuture.runAsync(() -> {
-                            QueryPayReq req = new QueryPayReq();
-                            req.setTransactionId(payTransaction.getTransactionId());
-                            QueryPayResp queryPayResp = queryPay(req);
-
-                            // 通知业务方支付结果
-                            String msg = JSON.toJSONString(BeanUtil.copyProperties(queryPayResp, TransactionResultDTO.class));
-                            Message<String> message = MessageBuilder.withPayload(msg).build();
-                            rocketMqTemplate.send(payTransaction.getBizMqTopic(), message);
-                        }, taskExecutor)
-                        .exceptionally(e -> {
-                            log.error("处理未支付失败", e);
-                            return null;
-                        })
-        );
-    }
-
-    @Override
     @Transactional(rollbackFor = Exception.class)
     public RefundResp refund(RefundReq req) {
         String payTransactionId = req.getPayTransactionId();
@@ -336,8 +234,9 @@ public class BizServiceImpl implements BizService {
 
             // 创建退款交易
             LocalDateTime now = LocalDateTime.now();
+            String id = "10002" + now.format(DatePattern.PURE_DATE_FORMATTER) + IdUtil.getSnowflakeNextIdStr();
             RefundTransaction refundTransaction = BeanUtil.copyProperties(req, RefundTransaction.class);
-            refundTransaction.setTransactionId(IdUtils.generateTransactionId("10002", now));
+            refundTransaction.setTransactionId(id);
             refundTransaction.setStatus(RefundStatusEnum.IN_REFUND.getValue());
             refundTransactionDAO.save(refundTransaction);
             log.info("创建退款交易：{}", refundTransaction);
@@ -352,125 +251,6 @@ public class BizServiceImpl implements BizService {
             return resp;
         } finally {
             lock.unlock();
-        }
-    }
-
-    @Override
-    public String refundNotify(HttpServletRequest request, String entrance) {
-        // 解析退款通知
-        TransactionResultDTO transactionResult = payMethodService.parseRefundNotify(request, entrance);
-        log.info("解析退款通知：{}", transactionResult);
-
-        // 异步执行处理
-        CompletableFuture.runAsync(() -> handleRefundNotify(transactionResult), notifyExecutor)
-                .exceptionally(e -> {
-                    log.error("处理退款通知失败", e);
-                    return null;
-                });
-
-        // 返回通知数据
-        return transactionResult.getNotifyResult();
-    }
-
-    /**
-     * 处理退款通知
-     *
-     * @param transactionResult 交易结果
-     */
-    @SuppressWarnings("all")
-    private void handleRefundNotify(TransactionResultDTO transactionResult) {
-        String transactionId = transactionResult.getTransactionId();
-        String key = StrUtil.format(RedisKeyConst.LOCK_REFUND_QUERY, transactionId);
-        RLock lock = redissonClient.getLock(key);
-        boolean locked = false;
-        RefundTransaction refundTransaction;
-        try {
-            // 锁单循环，避免其它操作冲突
-            do {
-                locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                refundTransaction = refundTransactionDAO.getOne(Wrappers.<RefundTransaction>lambdaQuery()
-                        .eq(RefundTransaction::getTransactionId, transactionId));
-                Assert.notNull(refundTransaction, "退款交易不存在");
-                if (!RefundStatusEnum.IN_REFUND.valueEquals(refundTransaction.getStatus())) {
-                    return;
-                }
-            } while (!locked);
-
-            // 更新退款交易
-            refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
-            refundTransaction.setStatus(transactionResult.getStatus());
-            refundTransaction.setFinishTime(transactionResult.getFinishTime());
-            refundTransactionDAO.updateById(refundTransaction);
-        } catch (InterruptedException e) {
-            throw new CustomizeException("处理退款通知获取锁失败", e);
-        } finally {
-            if (locked) {
-                lock.unlock();
-            }
-        }
-    }
-
-    @Override
-    public void handleInRefund() {
-        // 查询退款中的交易
-        List<RefundTransaction> refundTransactions = refundTransactionDAO.list(Wrappers.<RefundTransaction>lambdaQuery()
-                .select(RefundTransaction::getTransactionId)
-                .eq(RefundTransaction::getStatus, RefundStatusEnum.IN_REFUND.getValue()));
-        log.info("处理退款中数量：{}", refundTransactions.size());
-
-        // 异步执行处理
-        refundTransactions.forEach(refundTransaction ->
-                CompletableFuture.runAsync(() -> handleInRefundTask(refundTransaction), taskExecutor)
-                        .exceptionally(e -> {
-                            log.error("处理退款中失败", e);
-                            return null;
-                        })
-        );
-    }
-
-    /**
-     * 处理退款中任务
-     *
-     * @param refundTransaction 退款交易
-     */
-    @SuppressWarnings("all")
-    private void handleInRefundTask(RefundTransaction refundTransaction) {
-        String transactionId = refundTransaction.getTransactionId();
-        String key = StrUtil.format(RedisKeyConst.LOCK_REFUND_QUERY, transactionId);
-        RLock lock = redissonClient.getLock(key);
-        boolean locked = false;
-        try {
-            // 锁单循环，避免其它操作冲突
-            do {
-                locked = lock.tryLock(100L, TimeUnit.MILLISECONDS);
-                refundTransaction = refundTransactionDAO.getOne(Wrappers.<RefundTransaction>lambdaQuery()
-                        .eq(RefundTransaction::getTransactionId, transactionId));
-                Assert.notNull(refundTransaction, "退款交易不存在");
-                if (!RefundStatusEnum.IN_REFUND.valueEquals(refundTransaction.getStatus())) {
-                    return;
-                }
-            } while (!locked);
-
-            // 查询支付交易
-            PayTransaction payTransaction = payTransactionDAO.getOne(Wrappers.<PayTransaction>lambdaQuery()
-                    .eq(PayTransaction::getTransactionId, refundTransaction.getPayTransactionId()));
-            Assert.notNull(payTransaction, "支付交易不存在");
-
-            // 查询退款
-            refundTransaction.setPayTransaction(payTransaction);
-            TransactionResultDTO transactionResult = payMethodService.queryRefund(refundTransaction);
-
-            // 更新退款交易
-            refundTransaction.setPayMethodTransactionId(transactionResult.getPayMethodTransactionId());
-            refundTransaction.setStatus(transactionResult.getStatus());
-            refundTransaction.setFinishTime(transactionResult.getFinishTime());
-            refundTransactionDAO.updateById(refundTransaction);
-        } catch (InterruptedException e) {
-            throw new CustomizeException("处理退款任务获取锁失败", e);
-        } finally {
-            if (locked) {
-                lock.unlock();
-            }
         }
     }
 }
