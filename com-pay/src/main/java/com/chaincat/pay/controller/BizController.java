@@ -9,7 +9,6 @@ import com.chaincat.pay.model.resp.PrepayResp;
 import com.chaincat.pay.model.resp.QueryPayResp;
 import com.chaincat.pay.model.resp.RefundResp;
 import com.chaincat.pay.service.BizService;
-import com.chaincat.pay.utils.IResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,7 +37,7 @@ public class BizController {
      */
     @PostMapping("/prepay")
     public IResult<PrepayResp> prepay(@Valid @RequestBody PrepayReq req) {
-        return IResultUtils.success(bizService.prepay(req));
+        return IResult.success(bizService.prepay(req));
     }
 
     /**
@@ -50,7 +49,7 @@ public class BizController {
     @PostMapping("/closePay")
     public IResult<Void> closePay(@Valid @RequestBody ClosePayReq req) {
         bizService.closePay(req);
-        return IResultUtils.success();
+        return IResult.success();
     }
 
     /**
@@ -61,7 +60,7 @@ public class BizController {
      */
     @PostMapping("/queryPay")
     public IResult<QueryPayResp> queryPay(@Valid @RequestBody QueryPayReq req) {
-        return IResultUtils.success(bizService.queryPay(req));
+        return IResult.success(bizService.queryPay(req));
     }
 
     /**
@@ -72,6 +71,6 @@ public class BizController {
      */
     @PostMapping("/refund")
     public IResult<RefundResp> refund(@Valid @RequestBody RefundReq req) {
-        return IResultUtils.success(bizService.refund(req));
+        return IResult.success(bizService.refund(req));
     }
 }

@@ -1,8 +1,7 @@
 package com.chaincat.pay.controller;
 
 import com.chaincat.pay.model.IResult;
-import com.chaincat.pay.service.BizService;
-import com.chaincat.pay.utils.IResultUtils;
+import com.chaincat.pay.service.NotifyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 public class NotifyController {
 
     @Autowired
-    private BizService bizService;
+    private NotifyService notifyService;
 
     /**
      * 支付通知
@@ -32,7 +31,7 @@ public class NotifyController {
      */
     @PostMapping("/pay/{entrance}")
     public IResult<String> payNotify(HttpServletRequest request, @PathVariable String entrance) {
-        return IResultUtils.success(bizService.payNotify(request, entrance));
+        return IResult.success(notifyService.payNotify(request, entrance));
     }
 
     /**
@@ -44,6 +43,6 @@ public class NotifyController {
      */
     @PostMapping("/refund/{entrance}")
     public IResult<String> refundNotify(HttpServletRequest request, @PathVariable String entrance) {
-        return IResultUtils.success(bizService.refundNotify(request, entrance));
+        return IResult.success(notifyService.refundNotify(request, entrance));
     }
 }
