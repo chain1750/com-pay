@@ -7,21 +7,20 @@ import com.alibaba.fastjson.JSONObject;
 import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.entity.RefundTransaction;
-import com.chaincat.pay.feign.baseuser.WalletClient;
-import com.chaincat.pay.feign.baseuser.req.WalletClosePayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletQueryRefundReq;
-import com.chaincat.pay.feign.baseuser.resp.WalletPayResp;
+import com.chaincat.pay.feign.bootuser.WalletClient;
+import com.chaincat.pay.feign.bootuser.req.WalletClosePayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletPrepayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletQueryPayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletQueryRefundReq;
+import com.chaincat.pay.feign.bootuser.req.WalletRefundReq;
+import com.chaincat.pay.feign.bootuser.resp.WalletPayResp;
+import com.chaincat.pay.feign.bootuser.resp.WalletPrepayResp;
+import com.chaincat.pay.feign.bootuser.resp.WalletRefundResp;
 import com.chaincat.pay.model.IResult;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
 import com.chaincat.pay.paymethod.GlobalPayMethodService;
 import com.chaincat.pay.paymethod.wallet.config.WalletPayProperties;
-import com.chaincat.pay.feign.baseuser.req.WalletPrepayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletQueryPayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletRefundReq;
-import com.chaincat.pay.feign.baseuser.resp.WalletPrepayResp;
-import com.chaincat.pay.feign.baseuser.resp.WalletRefundResp;
 import com.chaincat.pay.utils.SignUtils;
-import com.chaincat.pay.utils.IResultUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -57,7 +56,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setNotifyUrl(notifyUrlProperties.getPayNotifyUrl(payTransaction.getEntrance()));
 
         IResult<WalletPrepayResp> result = walletClient.prepay(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 预支付失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "钱包支付 预支付失败：" + result.getMsg());
         return JSON.toJSONString(result.getData());
     }
 
@@ -67,7 +66,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(payTransaction.getTransactionId());
 
         IResult<Void> result = walletClient.closePay(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 关闭支付失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "钱包支付 关闭支付失败：" + result.getMsg());
     }
 
     @Override
@@ -76,7 +75,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(payTransaction.getTransactionId());
 
         IResult<WalletPayResp> result = walletClient.queryPay(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 查询支付失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "钱包支付 查询支付失败：" + result.getMsg());
         WalletPayResp walletPayResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();
@@ -116,7 +115,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setNotifyUrl(notifyUrlProperties.getRefundNotifyUrl(payTransaction.getEntrance()));
 
         IResult<Void> result = walletClient.refund(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 退款失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "钱包支付 退款失败：" + result.getMsg());
     }
 
     @Override
@@ -125,7 +124,7 @@ public class WalletPayMethodService implements GlobalPayMethodService {
         req.setOutTransactionId(refundTransaction.getTransactionId());
 
         IResult<WalletRefundResp> result = walletClient.queryRefund(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "钱包支付 查询退款失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "钱包支付 查询退款失败：" + result.getMsg());
         WalletRefundResp walletRefundResp = result.getData();
 
         TransactionResultDTO transactionResult = new TransactionResultDTO();

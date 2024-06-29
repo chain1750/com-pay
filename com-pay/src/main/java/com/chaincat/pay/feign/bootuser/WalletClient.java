@@ -1,14 +1,14 @@
-package com.chaincat.pay.feign.baseuser;
+package com.chaincat.pay.feign.bootuser;
 
-import com.chaincat.pay.feign.baseuser.req.WalletClosePayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletQueryRefundReq;
-import com.chaincat.pay.feign.baseuser.resp.WalletPayResp;
+import com.chaincat.pay.feign.bootuser.req.WalletClosePayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletPrepayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletQueryPayReq;
+import com.chaincat.pay.feign.bootuser.req.WalletQueryRefundReq;
+import com.chaincat.pay.feign.bootuser.req.WalletRefundReq;
+import com.chaincat.pay.feign.bootuser.resp.WalletPayResp;
+import com.chaincat.pay.feign.bootuser.resp.WalletPrepayResp;
+import com.chaincat.pay.feign.bootuser.resp.WalletRefundResp;
 import com.chaincat.pay.model.IResult;
-import com.chaincat.pay.feign.baseuser.req.WalletPrepayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletQueryPayReq;
-import com.chaincat.pay.feign.baseuser.req.WalletRefundReq;
-import com.chaincat.pay.feign.baseuser.resp.WalletPrepayResp;
-import com.chaincat.pay.feign.baseuser.resp.WalletRefundResp;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
  *
  * @author chenhaizhuang
  */
-@FeignClient(name = "base-user", path = "/base/user/wallet",
-        contextId = "com.chaincat.pay.feign.baseuser.WalletClient")
+@FeignClient(name = "boot-user", path = "/boot/user/wallet",
+        contextId = "com.chaincat.pay.feign.bootuser.WalletClient")
 public interface WalletClient {
 
     /**

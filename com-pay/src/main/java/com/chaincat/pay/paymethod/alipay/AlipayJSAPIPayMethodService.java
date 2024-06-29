@@ -10,13 +10,12 @@ import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.enums.ThirdpartyTypeEnum;
 import com.chaincat.pay.exception.CustomizeException;
-import com.chaincat.pay.feign.baseuser.ThirdpartyUserClient;
-import com.chaincat.pay.feign.baseuser.req.ThirdpartyUserOpenIdGetReq;
-import com.chaincat.pay.feign.baseuser.resp.ThirdpartyUserOpenIdGetResp;
+import com.chaincat.pay.feign.bootuser.ThirdpartyUserClient;
+import com.chaincat.pay.feign.bootuser.req.ThirdpartyUserOpenIdGetReq;
+import com.chaincat.pay.feign.bootuser.resp.ThirdpartyUserOpenIdGetResp;
 import com.chaincat.pay.model.IResult;
 import com.chaincat.pay.paymethod.alipay.config.AlipayPayFactory;
 import com.chaincat.pay.paymethod.alipay.config.AlipayPayProperties;
-import com.chaincat.pay.utils.IResultUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -83,7 +82,7 @@ public class AlipayJSAPIPayMethodService extends AlipayPayMethodService {
         req.setThirdpartyType(ThirdpartyTypeEnum.ALIPAY.getValue());
         req.setAppId(appId);
         IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "支付宝小程序支付 预支付失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "支付宝小程序支付 预支付失败：" + result.getMsg());
         return result.getData().getOpenId();
     }
 }

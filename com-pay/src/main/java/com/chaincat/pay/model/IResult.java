@@ -111,4 +111,13 @@ public class IResult<T> {
                 .msg(ERROR_MSG)
                 .build();
     }
+
+    /**
+     * 是否成功
+     *
+     * @return boolean
+     */
+    public boolean isSuccess() {
+        return SUCCESS_CODE.equals(getCode());
+    }
 }

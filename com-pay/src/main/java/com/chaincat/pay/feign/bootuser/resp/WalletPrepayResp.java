@@ -1,4 +1,4 @@
-package com.chaincat.pay.feign.baseuser.resp;
+package com.chaincat.pay.feign.bootuser.resp;
 
 import lombok.Data;
 

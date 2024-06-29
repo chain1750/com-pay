@@ -1,14 +1,14 @@
-package com.chaincat.pay.feign.baseuser.req;
+package com.chaincat.pay.feign.bootuser.req;
 
 import lombok.Data;
 
 /**
- * 钱包查询退款请求
+ * 钱包关闭支付请求
  *
  * @author chenhaizhuang
  */
 @Data
-public class WalletQueryRefundReq {
+public class WalletClosePayReq {
 
     /**
      * 外部交易ID

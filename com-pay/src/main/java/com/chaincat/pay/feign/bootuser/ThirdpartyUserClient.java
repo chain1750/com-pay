@@ -1,7 +1,7 @@
-package com.chaincat.pay.feign.baseuser;
+package com.chaincat.pay.feign.bootuser;
 
-import com.chaincat.pay.feign.baseuser.req.ThirdpartyUserOpenIdGetReq;
-import com.chaincat.pay.feign.baseuser.resp.ThirdpartyUserOpenIdGetResp;
+import com.chaincat.pay.feign.bootuser.req.ThirdpartyUserOpenIdGetReq;
+import com.chaincat.pay.feign.bootuser.resp.ThirdpartyUserOpenIdGetResp;
 import com.chaincat.pay.model.IResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
  *
  * @author chenhaizhuang
  */
-@FeignClient(name = "base-user", path = "/base/user/thirdpartyUser",
-        contextId = "com.chaincat.pay.feign.baseuser.ThirdpartyUserClient")
+@FeignClient(name = "boot-user", path = "/boot/user/thirdpartyUser",
+        contextId = "com.chaincat.pay.feign.bootuser.ThirdpartyUserClient")
 public interface ThirdpartyUserClient {
 
     /**

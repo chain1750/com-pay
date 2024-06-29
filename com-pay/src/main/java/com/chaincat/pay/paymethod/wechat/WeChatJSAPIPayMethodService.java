@@ -5,14 +5,13 @@ import com.chaincat.pay.config.NotifyUrlProperties;
 import com.chaincat.pay.entity.PayTransaction;
 import com.chaincat.pay.enums.ThirdpartyTypeEnum;
 import com.chaincat.pay.exception.CustomizeException;
-import com.chaincat.pay.feign.baseuser.ThirdpartyUserClient;
-import com.chaincat.pay.feign.baseuser.req.ThirdpartyUserOpenIdGetReq;
-import com.chaincat.pay.feign.baseuser.resp.ThirdpartyUserOpenIdGetResp;
+import com.chaincat.pay.feign.bootuser.ThirdpartyUserClient;
+import com.chaincat.pay.feign.bootuser.req.ThirdpartyUserOpenIdGetReq;
+import com.chaincat.pay.feign.bootuser.resp.ThirdpartyUserOpenIdGetResp;
 import com.chaincat.pay.model.IResult;
 import com.chaincat.pay.model.dto.TransactionResultDTO;
 import com.chaincat.pay.paymethod.wechat.config.WeChatPayFactory;
 import com.chaincat.pay.paymethod.wechat.config.WeChatPayProperties;
-import com.chaincat.pay.utils.IResultUtils;
 import com.wechat.pay.java.core.util.GsonUtil;
 import com.wechat.pay.java.service.payments.jsapi.model.Amount;
 import com.wechat.pay.java.service.payments.jsapi.model.CloseOrderRequest;
@@ -93,7 +92,7 @@ public class WeChatJSAPIPayMethodService extends WeChatPayMethodService {
         req.setThirdpartyType(ThirdpartyTypeEnum.WECHAT.getValue());
         req.setAppId(appId);
         IResult<ThirdpartyUserOpenIdGetResp> result = thirdpartyUserClient.getThirdpartyUserOpenId(req);
-        Assert.isTrue(IResultUtils.isSuccess(result), "微信JSAPI支付 预支付失败：" + result.getMsg());
+        Assert.isTrue(result.isSuccess(), "微信JSAPI支付 预支付失败：" + result.getMsg());
         return result.getData().getOpenId();
     }
 
