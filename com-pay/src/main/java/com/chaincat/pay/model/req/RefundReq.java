@@ -1,6 +1,9 @@
 package com.chaincat.pay.model.req;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
@@ -13,6 +16,9 @@ import java.math.BigDecimal;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RefundReq {
 
     /**

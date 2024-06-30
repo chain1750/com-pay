@@ -2,7 +2,10 @@ package com.chaincat.pay.model.req;
 
 import cn.hutool.core.date.DatePattern;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
@@ -16,6 +19,9 @@ import java.time.LocalDateTime;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PrepayReq {
 
     /**

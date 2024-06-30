@@ -1,6 +1,9 @@
 package com.chaincat.pay.feign.bootuser.resp;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -10,6 +13,9 @@ import java.time.LocalDateTime;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class WalletRefundResp {
 
     /**

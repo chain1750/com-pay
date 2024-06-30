@@ -1,6 +1,9 @@
 package com.chaincat.pay.feign.bootuser.req;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 钱包查询支付请求
@@ -8,6 +11,9 @@ import lombok.Data;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class WalletQueryPayReq {
 
     /**

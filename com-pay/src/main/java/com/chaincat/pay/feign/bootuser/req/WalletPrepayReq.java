@@ -1,6 +1,9 @@
 package com.chaincat.pay.feign.bootuser.req;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,6 +14,9 @@ import java.time.LocalDateTime;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class WalletPrepayReq {
 
     /**

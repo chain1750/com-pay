@@ -1,6 +1,9 @@
 package com.chaincat.pay.model.resp;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 预支付结果
@@ -8,6 +11,9 @@ import lombok.Data;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PrepayResp {
 
     /**

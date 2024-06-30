@@ -1,6 +1,9 @@
 package com.chaincat.pay.model.req;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
 
@@ -10,6 +13,9 @@ import javax.validation.constraints.NotBlank;
  * @author chenhaizhuang
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class QueryPayReq {
 
     /**
